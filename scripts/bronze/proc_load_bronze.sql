@@ -1,3 +1,9 @@
+/*
+    This procedure will truncate the tables
+    if they already exists and will insert
+    the data into the tables.
+*/
+
 USE DataWarehouse;
 GO
 
