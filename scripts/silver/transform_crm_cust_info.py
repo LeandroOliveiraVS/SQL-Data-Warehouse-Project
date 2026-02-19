@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import when, upper, trim, col, try_to_date, current_date
+from pyspark.sql.functions import when, upper, trim, col, try_to_date, current_date, initcap, concat, lit, regexp_replace
 import pyodbc
 
 
@@ -60,13 +60,17 @@ bronze_df_crm_prd_info = spark.read.jdbc(
 )
 
 silver_df_crm_prd_info = bronze_df_crm_prd_info \
-    .withColumn('prd_nm', trim(col('prd_nm'))) \
+    .withColumn('prd_nm', trim(upper(col('prd_nm')))) \
+    .withColumn('prd_key', trim(upper(col('prd_key')))) \
     .withColumn('prd_line', 
         when(trim(upper(col('prd_line')))== 'M', 'Mountain').
         when(trim(upper(col('prd_line'))) == 'R', 'Road').
         when(trim(upper(col('prd_line'))) == 'S', 'Other Sales').
         when(trim(upper(col('prd_line'))) == 'T', 'Touring').otherwise('N/A')
-    )
+    ) \
+    .withColumn('prd_start_dt', try_to_date(col('prd_start_dt'))) \
+    .withColumn('prd_end_dt', try_to_date(col('prd_end_dt'))) \
+    
 
 silver_df_crm_prd_info.write.jdbc(
     url= jdbc_url,
@@ -83,6 +87,8 @@ bronze_df_crm_sales_details = spark.read.jdbc(
 )
 
 silver_crm_sales_details = bronze_df_crm_sales_details \
+    .withColumn('sls_ord_num', trim(upper(col('sls_ord_num')))) \
+    .withColumn('sls_prd_key', trim(upper(col('sls_ord_num')))) \
     .withColumn('sls_order_dt', 
         try_to_date(col('sls_order_dt').cast('string'), 'yyyyMMdd')
     ) \
@@ -108,7 +114,14 @@ bronze_df_erp_cust_az12 = spark.read.jdbc(
 )
 
 silver_df_erp_cust_az12 = bronze_df_erp_cust_az12 \
-    .withColumn('dwh_create_date', current_date())
+    .withColumn('cid', trim(upper(col('cid')))) \
+    .withColumn('dwh_create_date', current_date()) \
+    .withColumn('gen', 
+        when(regexp_replace(upper(col('gen')), r'[\r\n\t\s]+', '').isin('M', 'MALE'), 'Male')
+        .when(regexp_replace(upper(col('gen')), r'[\r\n\t\s]+', '').isin('F', 'FEMALE'), 'Female')
+        .otherwise('N/A')
+    ) \
+    .withColumn('cid', trim(upper(col('cid'))))
 
 silver_df_erp_cust_az12.write.jdbc(
     url= jdbc_url,
@@ -125,11 +138,38 @@ bronze_df_erp_loc_a101 = spark.read.jdbc(
 )
 
 silver_df_erp_loc_a101 = bronze_df_erp_loc_a101 \
-    .withColumn('dwh_create_date', current_date())
+    .withColumn('cid', trim(upper(col('cid')))) \
+    .withColumn('dwh_create_date', current_date()) \
+    .withColumn('cntry', 
+        when(trim(upper(col('cntry'))) == 'DE', 'Germany').
+        when(trim(upper(col('cntry'))).isin('US', 'USA'), 'United States').
+        when(trim(upper(col('cntry'))).isNull(), 'N/A').
+        otherwise(trim(initcap(col('cntry'))))
+    )
 
 silver_df_erp_loc_a101.write.jdbc(
     url= jdbc_url,
     table="silver.erp_loc_a101",
+    mode="overwrite",
+    properties=connection_properties
+)
+
+# -- Silver erp_px_cat_g1v2 --
+bronze_df_erp_px_cat_g1v2 = spark.read.jdbc(
+    url= jdbc_url,
+    table="bronze.erp_px_cat_g1v2",
+    properties=connection_properties
+)
+
+silver_df_erp_px_cat_g1v2 = bronze_df_erp_px_cat_g1v2 \
+    .withColumn('id', trim(upper(col('id')))) \
+    .withColumn('cat', trim(initcap(col('cat')))) \
+    .withColumn('subcat', trim(initcap(col('subcat')))) \
+    .withColumn('maintenance', trim(initcap(col('maintenance')))) \
+
+silver_df_erp_px_cat_g1v2.write.jdbc(
+    url= jdbc_url,
+    table="silver.erp_px_cat_g1v2",
     mode="overwrite",
     properties=connection_properties
 )
