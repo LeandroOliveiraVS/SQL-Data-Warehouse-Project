@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import when, upper, trim, col, try_to_date
+from pyspark.sql.functions import when, upper, trim, col, try_to_date, current_date
 import pyodbc
 
 
@@ -96,6 +96,23 @@ silver_crm_sales_details = bronze_df_crm_sales_details \
 silver_crm_sales_details.write.jdbc(
     url= jdbc_url,
     table="silver.crm_sales_details",
+    mode="overwrite",
+    properties=connection_properties
+)
+
+# -- Silver erp_cust_az12 --
+bronze_df_erp_cust_az12 = spark.read.jdbc(
+    url= jdbc_url,
+    table="bronze.erp_cust_az12",
+    properties=connection_properties
+)
+
+silver_df_erp_cust_az12 = bronze_df_erp_cust_az12 \
+    .withColumn('dwh_create_date', current_date())
+
+silver_df_erp_cust_az12.write.jdbc(
+    url= jdbc_url,
+    table="silver.erp_cust_az12",
     mode="overwrite",
     properties=connection_properties
 )
