@@ -117,4 +117,21 @@ silver_df_erp_cust_az12.write.jdbc(
     properties=connection_properties
 )
 
+# -- Silver erp_loc_a101 --
+bronze_df_erp_loc_a101 = spark.read.jdbc(
+    url= jdbc_url,
+    table="bronze.erp_loc_a101",
+    properties=connection_properties
+)
+
+silver_df_erp_loc_a101 = bronze_df_erp_loc_a101 \
+    .withColumn('dwh_create_date', current_date())
+
+silver_df_erp_loc_a101.write.jdbc(
+    url= jdbc_url,
+    table="silver.erp_loc_a101",
+    mode="overwrite",
+    properties=connection_properties
+)
+
 spark.stop()
