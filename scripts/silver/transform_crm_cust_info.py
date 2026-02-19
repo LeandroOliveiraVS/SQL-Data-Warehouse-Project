@@ -23,7 +23,9 @@ connection_properties = {
     "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 }
 
-# --- Tabela bronze do SQL Server ---
+# --- Tabelas bronze do SQL Server ---
+
+# -- Tabela Silver crm_cust_info --
 bronze_df_crm_cust_info = spark.read.jdbc(
     url= jdbc_url,
     table="bronze.crm_cust_info",
@@ -46,6 +48,29 @@ silver_df_crm_cust_info = bronze_df_crm_cust_info \
 silver_df_crm_cust_info.write.jdbc(
     url= jdbc_url,
     table="silver.crm_cust_info",
+    mode="overwrite",
+    properties=connection_properties
+)
+
+# -- Tabela Silver crm_prd_info --
+bronze_df_crm_prd_info = spark.read.jdbc(
+    url= jdbc_url,
+    table="bronze.crm_prd_info",
+    properties=connection_properties
+)
+
+silver_df_crm_prd_info = bronze_df_crm_prd_info \
+    .withColumn('prd_nm', trim(col('prd_nm'))) \
+    .withColumn('prd_line', 
+        when(upper(col('prd_line')) == 'M', 'Mountain').
+        when(upper(col('prd_line')) == 'R', 'Road').
+        when(upper(col('prd_line')) == 'S', 'Other Sales').
+        when(upper(col('prd_line')) == 'T', 'Touring').otherwise('N/A')
+    )
+
+silver_df_crm_prd_info.write.jdbc(
+    url= jdbc_url,
+    table="silver.crm_prd_info",
     mode="overwrite",
     properties=connection_properties
 )
