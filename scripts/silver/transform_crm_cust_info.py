@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import when, upper, trim, col
+from pyspark.sql.functions import when, upper, trim, col, try_to_date
 import pyodbc
 
 
@@ -62,15 +62,40 @@ bronze_df_crm_prd_info = spark.read.jdbc(
 silver_df_crm_prd_info = bronze_df_crm_prd_info \
     .withColumn('prd_nm', trim(col('prd_nm'))) \
     .withColumn('prd_line', 
-        when(upper(col('prd_line')) == 'M', 'Mountain').
-        when(upper(col('prd_line')) == 'R', 'Road').
-        when(upper(col('prd_line')) == 'S', 'Other Sales').
-        when(upper(col('prd_line')) == 'T', 'Touring').otherwise('N/A')
+        when(trim(upper(col('prd_line')))== 'M', 'Mountain').
+        when(trim(upper(col('prd_line'))) == 'R', 'Road').
+        when(trim(upper(col('prd_line'))) == 'S', 'Other Sales').
+        when(trim(upper(col('prd_line'))) == 'T', 'Touring').otherwise('N/A')
     )
 
 silver_df_crm_prd_info.write.jdbc(
     url= jdbc_url,
     table="silver.crm_prd_info",
+    mode="overwrite",
+    properties=connection_properties
+)
+
+# -- Tabela Silver crm_sales_details -- 
+bronze_df_crm_sales_details = spark.read.jdbc(
+    url= jdbc_url,
+    table="bronze.crm_sales_details",
+    properties=connection_properties
+)
+
+silver_crm_sales_details = bronze_df_crm_sales_details \
+    .withColumn('sls_order_dt', 
+        try_to_date(col('sls_order_dt').cast('string'), 'yyyyMMdd')
+    ) \
+    .withColumn('sls_ship_dt',
+        try_to_date(col('sls_ship_dt').cast('string'), 'yyyyMMdd')
+    ) \
+    .withColumn('sls_due_dt',
+        try_to_date(col('sls_due_dt').cast('string'), 'yyyyMMdd')
+    )
+
+silver_crm_sales_details.write.jdbc(
+    url= jdbc_url,
+    table="silver.crm_sales_details",
     mode="overwrite",
     properties=connection_properties
 )
