@@ -141,10 +141,10 @@ silver_df_erp_loc_a101 = bronze_df_erp_loc_a101 \
     .withColumn('cid', trim(upper(col('cid')))) \
     .withColumn('dwh_create_date', current_date()) \
     .withColumn('cntry', 
-        when(trim(upper(col('cntry'))) == 'DE', 'Germany').
-        when(trim(upper(col('cntry'))).isin('US', 'USA'), 'United States').
-        when(trim(upper(col('cntry'))).isNull(), 'N/A').
-        otherwise(trim(initcap(col('cntry'))))
+        when(regexp_replace(upper(col('cntry')), r'[\r\n\t\s]+', '') == 'DE', 'Germany').
+        when(regexp_replace(upper(col('cntry')), r'[\r\n\t\s]+', '').isin('US', 'USA'), 'United States').
+        when(regexp_replace(upper(col('cntry')), r'[\r\n\t\s]+', '').isNull(), 'N/A').
+        otherwise(regexp_replace(initcap(col('cntry')), r'[\r\n\t\s]+', ''))
     )
 
 silver_df_erp_loc_a101.write.jdbc(
