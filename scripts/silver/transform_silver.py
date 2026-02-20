@@ -14,7 +14,7 @@ JDBC_DRIVER = f"{PROJECT_DIR}/lib/mssql-jdbc-12.4.2.jre11.jar"
 
 # --- Configurar Spark ---
 spark = SparkSession.builder \
-        .appName("Silver - Transform crm_cust_info") \
+        .appName("Silver - Transform & Load") \
         .config("spark.jars", JDBC_DRIVER) \
         .config("spark.driver.extraClassPath", JDBC_DRIVER) \
         .config("spark.executor.extraClassPath", JDBC_DRIVER) \
