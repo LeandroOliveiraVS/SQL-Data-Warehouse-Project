@@ -1,10 +1,15 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import when, upper, trim, col, try_to_date, current_date, initcap, concat, lit, regexp_replace
-import pyodbc
+from dotenv import load_dotenv
+import os
 
+# -- Variaveis do ambiente --
+load_dotenv()
+
+PROJECT_DIR = os.getenv('PROJECT_DIR')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
 
 # --- Caminho do driver JDBC ---
-PROJECT_DIR = "/home/leandro/Documentos/Workspace/sql-datawarehouse-project"
 JDBC_DRIVER = f"{PROJECT_DIR}/lib/mssql-jdbc-12.4.2.jre11.jar"
 
 # --- Configurar Spark ---
@@ -19,7 +24,7 @@ spark = SparkSession.builder \
 jdbc_url = "jdbc:sqlserver://localhost:1433;databaseName=DataWarehouse;encrypt=false"
 connection_properties = {
     "user": "sa",
-    "password": "123456Lo",
+    "password": DB_PASSWORD,
     "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 }
 
