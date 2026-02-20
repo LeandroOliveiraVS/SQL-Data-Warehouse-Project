@@ -28,7 +28,7 @@ connection_properties = {
     "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 }
 
-# --- Tabelas bronze do SQL Server ---
+# --- Tabelas ---
 
 # -- Tabela Silver crm_cust_info --
 bronze_df_crm_cust_info = spark.read.jdbc(
@@ -122,8 +122,8 @@ silver_df_erp_cust_az12 = bronze_df_erp_cust_az12 \
     .withColumn('cid', trim(upper(col('cid')))) \
     .withColumn('dwh_create_date', current_date()) \
     .withColumn('gen', 
-        when(regexp_replace(upper(col('gen')), r'[\r\n\t\s]+', '').isin('M', 'MALE'), 'Male')
-        .when(regexp_replace(upper(col('gen')), r'[\r\n\t\s]+', '').isin('F', 'FEMALE'), 'Female')
+        when(trim(upper(col('gen'))).isin('M', 'MALE'), 'Male')
+        .when(trim(upper(col('gen'))).isin('F', 'FEMALE'), 'Female')
         .otherwise('N/A')
     ) \
     .withColumn('cid', trim(upper(col('cid'))))
@@ -146,10 +146,10 @@ silver_df_erp_loc_a101 = bronze_df_erp_loc_a101 \
     .withColumn('cid', trim(upper(col('cid')))) \
     .withColumn('dwh_create_date', current_date()) \
     .withColumn('cntry', 
-        when(regexp_replace(upper(col('cntry')), r'[\r\n\t\s]+', '') == 'DE', 'Germany').
-        when(regexp_replace(upper(col('cntry')), r'[\r\n\t\s]+', '').isin('US', 'USA'), 'United States').
-        when(regexp_replace(upper(col('cntry')), r'[\r\n\t\s]+', '').isNull(), 'N/A').
-        otherwise(regexp_replace(initcap(col('cntry')), r'[\r\n\t\s]+', ''))
+        when(trim(upper(col('cntry'))) == 'DE', 'Germany').
+        when(trim(upper(col('cntry'))).isin('US', 'USA'), 'United States').
+        when(trim(upper(col('cntry'))).isNull(), 'N/A').
+        otherwise(trim(initcap(col('cntry'))))
     )
 
 silver_df_erp_loc_a101.write.jdbc(
