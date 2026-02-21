@@ -41,13 +41,13 @@ silver_df_crm_cust_info = bronze_df_crm_cust_info \
     .withColumn('cst_firstname', trim(upper(col('cst_firstname')))) \
     .withColumn('cst_lastname', trim(upper(col('cst_lastname')))) \
     .withColumn('cst_marital_status', 
-                when(
-                    col('cst_marital_status') == 'M', "Married")
-                .otherwise("Single")) \
+                when(col('cst_marital_status') == 'M', "Married").
+                when(col('cst_marital_status') == 'S', "Single")
+                .otherwise("N/A")) \
     .withColumn('cst_gndr', 
-                when(
-                    col('cst_gndr') == 'M', 'Male'
-                ).otherwise('Female')) \
+                when(col('cst_gndr') == 'M', 'Male').
+                when(col('cst_gndr') == 'F', 'Female')
+                .otherwise('N/A')) \
     .filter(col('cst_id').isNotNull())
 
 silver_df_crm_cust_info.write.jdbc(

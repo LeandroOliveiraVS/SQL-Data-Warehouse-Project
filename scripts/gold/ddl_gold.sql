@@ -13,8 +13,8 @@ SELECT
     ci.cst_lastname         AS lastname,
     ci.cst_marital_status   AS marital_status,
     CASE 
-        WHEN ci.cst_gndr != 'n/a' THEN ci.cst_gndr -- CRM is the primary source for gender
-        ELSE COALESCE(ca.gen, 'n/a')  			   -- Fallback to ERP data
+        WHEN ci.cst_gndr != 'N/A' THEN ci.cst_gndr -- CRM is the primary source for gender
+        ELSE COALESCE(ca.gen, 'N/A')  			   -- Fallback to ERP data
     END                     AS gender,             
     ca.BDATE                AS birthday,
     cl.cntry                AS country
