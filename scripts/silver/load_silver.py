@@ -119,7 +119,7 @@ bronze_df_erp_cust_az12 = spark.read.jdbc(
 )
 
 silver_df_erp_cust_az12 = bronze_df_erp_cust_az12 \
-    .withColumn('cid', trim(upper(col('cid')))) \
+    .withColumn('cid', trim(upper(regexp_replace(col('cid'), r'^NAS', '')))) \
     .withColumn('dwh_create_date', current_date()) \
     .withColumn('gen', 
         when(trim(upper(col('gen'))).isin('M', 'MALE'), 'Male')
@@ -143,7 +143,7 @@ bronze_df_erp_loc_a101 = spark.read.jdbc(
 )
 
 silver_df_erp_loc_a101 = bronze_df_erp_loc_a101 \
-    .withColumn('cid', trim(upper(col('cid')))) \
+    .withColumn('cid', trim(upper(regexp_replace(col('cid'), r'-', '')))) \
     .withColumn('dwh_create_date', current_date()) \
     .withColumn('cntry', 
         when(trim(upper(col('cntry'))) == 'DE', 'Germany').
