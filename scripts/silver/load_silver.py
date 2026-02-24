@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import when, upper, trim, col, try_to_date, current_date, initcap, concat, lit, regexp_replace
+from pyspark.sql.functions import when, upper, trim, col, try_to_date, current_date, initcap, substring, regexp_replace, length
 from dotenv import load_dotenv
 import os
 
@@ -66,12 +66,17 @@ bronze_df_crm_prd_info = spark.read.jdbc(
 
 silver_df_crm_prd_info = bronze_df_crm_prd_info \
     .withColumn('prd_nm', trim(upper(col('prd_nm')))) \
-    .withColumn('prd_key', trim(upper(col('prd_key')))) \
+    .withColumn('cat_id', trim(upper(substring(regexp_replace(col('prd_key'), r'-', '_'), 1, 5)))) \
+    .withColumn('prd_key', trim(upper(substring(col('prd_key'), 7, length(col('prd_key')) )))) \
     .withColumn('prd_line', 
         when(trim(upper(col('prd_line')))== 'M', 'Mountain').
         when(trim(upper(col('prd_line'))) == 'R', 'Road').
         when(trim(upper(col('prd_line'))) == 'S', 'Other Sales').
         when(trim(upper(col('prd_line'))) == 'T', 'Touring').otherwise('N/A')
+    ) \
+    .withColumn('prd_cost', 
+        when(col('prd_cost').isNull(), 0).
+        otherwise(col('prd_cost'))
     ) \
     .withColumn('prd_start_dt', try_to_date(col('prd_start_dt'))) \
     .withColumn('prd_end_dt', try_to_date(col('prd_end_dt'))) \
