@@ -1,5 +1,9 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import when, upper, trim, col, try_to_date, current_date, initcap, substring, regexp_replace, length
+from pyspark.sql.functions import (
+    when, upper, trim, col, try_to_date, 
+    current_date, initcap, substring, 
+    regexp_replace, length, lead, date_sub)
+from pyspark.sql import Window
 from dotenv import load_dotenv
 import os
 
@@ -64,6 +68,8 @@ bronze_df_crm_prd_info = spark.read.jdbc(
     properties=connection_properties
 )
 
+window_spec = Window.orderBy('prd_start_dt')
+
 silver_df_crm_prd_info = bronze_df_crm_prd_info \
     .withColumn('prd_nm', trim(upper(col('prd_nm')))) \
     .withColumn('cat_id', trim(upper(substring(regexp_replace(col('prd_key'), r'-', '_'), 1, 5)))) \
@@ -79,7 +85,13 @@ silver_df_crm_prd_info = bronze_df_crm_prd_info \
         otherwise(col('prd_cost'))
     ) \
     .withColumn('prd_start_dt', try_to_date(col('prd_start_dt'))) \
-    .withColumn('prd_end_dt', try_to_date(col('prd_end_dt'))) \
+    .withColumn('prd_next_start_dt', lead(col('prd_start_dt'), 1).over(window_spec)) \
+    .withColumn('prd_end_dt', 
+        when(col('prd_end_dt').isNull(),
+            date_sub(col('prd_next_start_dt'), 1)
+        ).otherwise(col('prd_end_dt'))
+    ) \
+    .drop(col('prd_next_start_dt'))
     
 
 silver_df_crm_prd_info.write.jdbc(
@@ -98,7 +110,7 @@ bronze_df_crm_sales_details = spark.read.jdbc(
 
 silver_crm_sales_details = bronze_df_crm_sales_details \
     .withColumn('sls_ord_num', trim(upper(col('sls_ord_num')))) \
-    .withColumn('sls_prd_key', trim(upper(col('sls_ord_num')))) \
+    .withColumn('sls_prd_key', trim(upper(col('sls_prd_key')))) \
     .withColumn('sls_order_dt', 
         try_to_date(col('sls_order_dt').cast('string'), 'yyyyMMdd')
     ) \
